@@ -1,0 +1,6 @@
+.DS_Store
+*.log
+*.ndjson
+*.jsonl
+!samples/*.jsonl
+!samples/*.ndjson

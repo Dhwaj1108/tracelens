@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b1017" />
+    <meta name="description" content="A private, local-first workspace for finding the signal in application logs." />
+    <title>TraceLens — incident log explorer</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="TraceLens home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>tracelens<span class="brand-period">.</span></span>
+        </a>
+        <div class="topbar-center"><span class="workspace-dot"></span> Local workspace <span class="topbar-divider">/</span> incident-review</div>
+        <div class="topbar-actions">
+          <span class="privacy-pill"><span class="lock-icon" aria-hidden="true">◆</span> Private by default</span>
+          <button class="icon-button" id="help-button" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts">?</button>
+          <span class="avatar" aria-label="Local session">TL</span>
+        </div>
+      </header>
+
+      <main id="top" class="main-content">
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow"><span class="live-dot"></span> INCIDENT WORKSPACE <span class="eyebrow-separator">·</span> SAMPLE DATA</div>
+            <h1>See what happened.</h1>
+            <p class="subtitle">Turn scattered log lines into a timeline your team can act on.</p>
+          </div>
+          <div class="heading-actions">
+            <button class="button button-quiet" id="reset-button"><span aria-hidden="true">↺</span> Reset view</button>
+            <button class="button button-primary" id="open-file-button"><span aria-hidden="true">↑</span> Import logs</button>
+            <input id="file-input" type="file" accept=".jsonl,.ndjson,.log,.txt,application/json,text/plain" hidden />
+          </div>
+        </section>
+
+        <section class="metrics" aria-label="Incident overview">
+          <article class="metric-card"><div class="metric-label">LOG EVENTS <span class="metric-help" title="Events in the current view">i</span></div><div class="metric-value" id="metric-events">—</div><div class="metric-foot"><span class="metric-accent">●</span> <span id="metric-window">Waiting for data</span></div></article>
+          <article class="metric-card"><div class="metric-label">ERROR RATE <span class="metric-help" title="Errors and fatal events divided by all events">i</span></div><div class="metric-value" id="metric-error-rate">—<small>%</small></div><div class="metric-foot"><span class="metric-bad">●</span> <span id="metric-errors">— errors</span></div></article>
+          <article class="metric-card"><div class="metric-label">SERVICES <span class="metric-help" title="Distinct services found in the current view">i</span></div><div class="metric-value" id="metric-services">—</div><div class="metric-foot"><span class="metric-accent">◈</span> <span id="metric-service-names">Waiting for data</span></div></article>
+          <article class="metric-card"><div class="metric-label">P95 DURATION <span class="metric-help" title="95th percentile of available duration_ms values">i</span></div><div class="metric-value" id="metric-p95">—<small> ms</small></div><div class="metric-foot"><span class="metric-warn">◷</span> <span id="metric-duration-count">No duration data</span></div></article>
+        </section>
+
+        <section class="toolbar" aria-label="Log filters">
+          <label class="search-box"><span class="search-icon" aria-hidden="true">⌕</span><input id="search-input" type="search" placeholder="Search messages, services, trace IDs…" autocomplete="off" /><kbd>/</kbd></label>
+          <label class="select-wrap"><span class="sr-only">Filter by service</span><select id="service-filter"><option value="">All services</option></select><span class="select-chevron">⌄</span></label>
+          <label class="select-wrap"><span class="sr-only">Filter by severity</span><select id="level-filter"><option value="">All levels</option><option value="fatal">Fatal</option><option value="error">Error</option><option value="warn">Warning</option><option value="info">Info</option><option value="debug">Debug</option><option value="trace">Trace</option></select><span class="select-chevron">⌄</span></label>
+          <span class="toolbar-spacer"></span>
+          <span class="result-count" id="result-count">— events</span>
+          <button class="icon-button sort-button" id="sort-button" aria-label="Sort newest first" title="Sort newest first">↓</button>
+        </section>
+
+        <div id="notice" class="notice" role="status" hidden></div>
+
+        <section class="content-grid">
+          <div class="primary-column">
+            <section class="panel timeline-panel" aria-labelledby="timeline-title">
+              <div class="panel-heading">
+                <div><h2 id="timeline-title">Event timeline</h2><p class="panel-subtitle" id="timeline-range">Events grouped by time</p></div>
+                <div class="timeline-legend"><span><i class="legend-error"></i> Errors</span><span><i class="legend-activity"></i> Activity</span></div>
+              </div>
+              <div class="chart-wrap"><div class="chart-y-labels" aria-hidden="true"><span>high</span><span>low</span></div><div id="timeline-chart" class="timeline-chart" role="img" aria-label="Log event volume over time"></div></div>
+              <div class="chart-axis" id="chart-axis"><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span></div>
+            </section>
+
+            <section class="panel events-panel" aria-labelledby="events-title">
+              <div class="panel-heading events-heading"><div><div class="heading-title-line"><h2 id="events-title">Log stream</h2><span id="stream-badge" class="small-badge">LIVE VIEW</span></div><p class="panel-subtitle">Select an event to inspect its full context</p></div><button class="text-button" id="download-button" title="Download the filtered events as JSONL">Export view <span aria-hidden="true">↗</span></button></div>
+              <div class="event-table-wrap">
+                <table class="event-table"><thead><tr><th scope="col">TIME</th><th scope="col">LEVEL</th><th scope="col">SERVICE</th><th scope="col">MESSAGE</th><th scope="col">TRACE</th></tr></thead><tbody id="event-rows"></tbody></table>
+                <div id="empty-state" class="empty-state" hidden><span class="empty-icon">⌕</span><h3>No events match these filters</h3><p>Try broadening your search or clearing a filter.</p><button class="text-button" id="clear-filters-button">Clear filters</button></div>
+              </div>
+              <div class="table-footer"><span id="footer-count">Showing 0 of 0 events</span><button class="text-button" id="load-more-button" hidden>Show 250 more</button><span class="keyboard-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate <span class="hint-gap"></span><kbd>↵</kbd> inspect</span></div>
+            </section>
+          </div>
+
+          <aside class="side-column">
+            <section class="panel detail-panel" aria-labelledby="detail-title">
+              <div class="panel-heading"><div><div class="heading-title-line"><h2 id="detail-title">Event details</h2><span class="detail-live"><i></i> CONTEXT</span></div><p class="panel-subtitle" id="detail-subtitle">Choose a log event</p></div></div>
+              <div id="detail-content" class="detail-content"><div class="detail-placeholder"><div class="placeholder-orbit"><span></span></div><p>Select a row to inspect<br />the complete event payload.</p><div class="placeholder-tip">Tip: search for <code>trace-7f3a</code></div></div></div>
+            </section>
+
+            <section class="panel traces-panel" aria-labelledby="traces-title">
+              <div class="panel-heading"><div><div class="heading-title-line"><h2 id="traces-title">Noisiest traces</h2><span class="small-badge">CORRELATED</span></div><p class="panel-subtitle">Grouped by trace ID</p></div><button id="clear-trace-button" class="mini-clear" aria-label="Clear trace filter" title="Clear trace filter">×</button></div>
+              <div id="trace-list" class="trace-list"></div>
+              <div id="trace-empty" class="mini-empty" hidden>No trace IDs found in the current view.</div>
+            </section>
+
+            <section id="drop-zone" class="drop-card" tabindex="0" role="button" aria-label="Drop a log file or press Enter to browse">
+              <div class="drop-icon" aria-hidden="true">＋</div><div><strong>Bring your own logs</strong><p>Drop a .jsonl or .log file</p></div><span class="drop-arrow">↗</span>
+            </section>
+            <p class="privacy-note"><span aria-hidden="true">◆</span> Files are parsed in your browser. <strong>Nothing is uploaded.</strong></p>
+          </aside>
+        </section>
+        <footer class="app-footer"><span><span class="footer-mark">◉</span> TraceLens <span class="footer-muted">v1.0.0</span></span><span>Built for the moments between alert and answer.</span><a href="https://github.com/Dhwaj1108/tracelens" target="_blank" rel="noreferrer">Source <span aria-hidden="true">↗</span></a></footer>
+      </main>
+    </div>
+    <div id="shortcut-dialog" class="dialog-backdrop" hidden><section class="shortcut-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcut-title"><button class="dialog-close" id="close-help" aria-label="Close shortcuts">×</button><div class="eyebrow">QUICK REFERENCE</div><h2 id="shortcut-title">Keyboard shortcuts</h2><div class="shortcut-row"><span>Focus search</span><kbd>/</kbd></div><div class="shortcut-row"><span>Move through events</span><span><kbd>↑</kbd> <kbd>↓</kbd></span></div><div class="shortcut-row"><span>Inspect selected event</span><kbd>↵</kbd></div><div class="shortcut-row"><span>Close this dialog</span><kbd>Esc</kbd></div><p class="dialog-footnote">Shortcuts pause while you’re typing in a field.</p></section></div>
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
