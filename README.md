@@ -38,7 +38,7 @@ Open [http://localhost:8000](http://localhost:8000). To review your own logs, ch
 - **Summarizes the current view** with event count, error rate, involved services, and nearest-rank p95 duration.
 - **Keeps the raw event one click away** and exports the filtered view back to JSONL.
 - **Supports keyboard navigation**: `/` focuses search, ↑/↓ moves through events, Enter inspects, and Esc closes help.
-- **Works offline after the files are served**; there are no analytics, API calls, third-party fonts, or runtime dependencies.
+- **Works offline after the files are served**; it makes no remote requests, uses no analytics or third-party fonts, and has no runtime dependencies.
 
 See [the format reference](docs/data-format.md) for field aliases, timestamps, and the text-log grammar.
 

@@ -21,7 +21,7 @@ Each line must be a JSON object with a timestamp and a message. Fields can use t
 | Request ID | `request_id`, `requestId`, `request.id` |
 | Duration (milliseconds) | `duration_ms`, `durationMs`, `elapsed_ms`, `response_time_ms` |
 
-The timestamp, level, message and service fields may also be nested under an `attributes` object. OpenTelemetry-style `resource.attributes["service.name"]` is recognized for service names. Timestamps with a timezone are respected. ISO-like timestamps without one are interpreted as UTC.
+The timestamp, level, message and service fields may also be nested under an `attributes` object. OpenTelemetry-style `resource.attributes["service.name"]` is recognized for service names. Timestamps with a timezone are respected. ISO-like timestamps without one are interpreted as UTC. Numeric Unix timestamps below `100000000000` are interpreted as seconds; larger values are treated as milliseconds.
 
 ## Plain text
 
@@ -37,7 +37,7 @@ Plain-text rows have no trace, span, request or duration metadata, so those fiel
 ## Import behavior
 
 - Files are limited to 20 MB per import.
-- Invalid JSON, missing timestamps and unsupported lines are skipped with a line number in the import diagnostics.
+- Invalid JSON, missing timestamps and unsupported lines are skipped. The import notice includes the first four line numbers and a count of any remaining skipped lines.
 - Rows are capped at 250 on screen at first; choose **Show 250 more** to reveal additional matches.
 - The source JSON object is retained in memory for inspection and JSONL export.
 - Nothing is persisted to local storage or sent to a server.

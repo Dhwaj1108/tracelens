@@ -14,7 +14,6 @@ const state = {
   rowLimit: 250,
 };
 
-const severityOrder = ["fatal", "error", "warn", "info", "debug", "trace"];
 const dateTime = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
 const dateShort = new Intl.DateTimeFormat(undefined, { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
 const dateFull = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", timeZoneName: "short" });
@@ -185,7 +184,9 @@ function loadText(text, filename, imported) {
   state.selectedId = null;
   updateServiceFilter();
   if (result.events.length && result.issues.length) {
-    setNotice(`Loaded ${result.events.length} events. ${result.issues.length} line${result.issues.length === 1 ? " was" : "s were"} skipped — check timestamps and record format.`);
+    const issueDetails = result.issues.slice(0, 4).join(" · ");
+    const remaining = result.issues.length - Math.min(result.issues.length, 4);
+    setNotice(`Loaded ${result.events.length} events. ${result.issues.length} line${result.issues.length === 1 ? " was" : "s were"} skipped: ${issueDetails}${remaining ? ` · +${remaining} more` : ""}`);
   } else if (!result.events.length && result.lineCount) {
     setNotice("No usable events found. Include a timestamp and message in JSONL, or use ISO timestamps in supported text logs.");
   } else {
@@ -221,6 +222,7 @@ function resetView() {
   $("#level-filter").value = "";
   state.traceId = "";
   state.descending = true;
+  state.rowLimit = 250;
   $("#sort-button").textContent = "↓";
   $("#sort-button").setAttribute("aria-label", "Sort newest first");
   render();
@@ -249,7 +251,11 @@ function closeDialog() {
 }
 
 $("#open-file-button").addEventListener("click", () => $("#file-input").click());
-$("#file-input").addEventListener("change", (event) => importFile(event.target.files?.[0]));
+$("#file-input").addEventListener("change", (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  importFile(file);
+});
 $("#drop-zone").addEventListener("click", () => $("#file-input").click());
 $("#drop-zone").addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); $("#file-input").click(); } });
 $("#drop-zone").addEventListener("dragover", (event) => { event.preventDefault(); $("#drop-zone").classList.add("dragging"); });
@@ -301,7 +307,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowDown" || event.key === "ArrowUp") {
     const current = state.visible.findIndex((item) => item.id === state.selectedId);
     const direction = event.key === "ArrowDown" ? 1 : -1;
-    const next = Math.max(0, Math.min(state.visible.length - 1, current + direction));
+    const next = Math.max(0, Math.min(Math.min(state.visible.length, state.rowLimit) - 1, current + direction));
     if (state.visible[next]) { event.preventDefault(); selectEvent(state.visible[next].id); document.querySelector(`[data-event-id="${CSS.escape(state.selectedId)}"]`)?.focus(); }
   }
   if (event.key === "Enter" && state.selectedId) renderDetails(state.visible.find((item) => item.id === state.selectedId));

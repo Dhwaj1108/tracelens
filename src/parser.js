@@ -20,9 +20,11 @@ function getEvent(raw, lineNumber, rawLine) {
   const timestamp = first(raw.timestamp, raw.time, raw["@timestamp"], raw.datetime, raw.ts, attributes.timestamp);
   const timestampText = String(timestamp ?? "").trim();
   const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(timestampText);
-  const normalizedTimestamp = !hasZone && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(timestampText)
-    ? `${timestampText.replace(" ", "T")}Z`
-    : timestamp;
+  const normalizedTimestamp = typeof timestamp === "number" && Math.abs(timestamp) < 100_000_000_000
+    ? timestamp * 1000
+    : !hasZone && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(timestampText)
+      ? `${timestampText.replace(" ", "T")}Z`
+      : timestamp;
   const date = new Date(normalizedTimestamp);
   if (!timestamp || Number.isNaN(date.getTime())) return { error: `line ${lineNumber}: missing or invalid timestamp` };
 
