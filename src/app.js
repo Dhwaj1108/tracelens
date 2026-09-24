@@ -111,7 +111,7 @@ function renderEvents(events) {
       <td><span class="level-chip level-${escapeHtml(event.level)}">${escapeHtml(event.level)}</span></td>
       <td class="service-name" title="${escapeHtml(event.service)}">${escapeHtml(compact(event.service, 17))}</td>
       <td class="message-cell" title="${escapeHtml(event.message)}">${escapeHtml(event.message)}</td>
-      <td>${event.traceId ? `<button class="trace-link" data-trace-id="${escapeHtml(event.traceId)}" title="Filter this trace">${escapeHtml(compact(event.traceId, 12))}</button>` : "<span class="time-cell">—</span>"}</td>
+      <td>${event.traceId ? `<button class="trace-link" data-trace-id="${escapeHtml(event.traceId)}" title="Filter this trace">${escapeHtml(compact(event.traceId, 12))}</button>` : '<span class="time-cell">—</span>'}</td>
     </tr>`).join("");
 }
 
